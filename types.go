@@ -331,12 +331,12 @@ func (l *LabelRewriter) GenNewLabels(key, value string) map[string]string {
 }
 
 type Rule struct {
-	Topic         string               `yaml:"topic" validate:"required"`
-	Selectors     []MetricNameSelector `yaml:"selectors" validate:"required"`
-	LabelRewriter []*LabelRewriter     `yaml:"labelRewriter"`
-	Org           int                  `yaml:"org"`
-	Token         string               `yaml:"token" validate:"required"`
-	DeleteLabels  map[string]bool      `yaml:"deleteLabels"` // 指定删除标签
+	Topic         string                `yaml:"topic" validate:"required"`
+	Selectors     []*MetricNameSelector `yaml:"selectors" validate:"required"`
+	LabelRewriter []*LabelRewriter      `yaml:"labelRewriter"`
+	Org           int                   `yaml:"org"`
+	Token         string                `yaml:"token" validate:"required"`
+	DeleteLabels  map[string]bool       `yaml:"deleteLabels"` // 指定删除标签
 	labelRewriter map[string]*LabelRewriter
 }
 

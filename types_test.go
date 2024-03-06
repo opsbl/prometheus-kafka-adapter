@@ -54,7 +54,7 @@ func TestLabel(t *testing.T) {
 func TestRule_Selected(t *testing.T) {
 	rule := &Rule{
 		Topic: "custom_HOST",
-		Selectors: []Selector{
+		Selectors: []*MetricNameSelector{
 			&MetricNameSelector{
 				Method: "regex",
 				Value:  "^node_",
@@ -74,7 +74,7 @@ func TestRule_Selected(t *testing.T) {
 func TestRule_RewriteLabel(t *testing.T) {
 	rule := &Rule{
 		Topic: "custom_HOST",
-		Selectors: []Selector{
+		Selectors: []*MetricNameSelector{
 			&MetricNameSelector{
 				Method: "regex",
 				Value:  "^node_",
