@@ -33,6 +33,79 @@ type Serializer interface {
 	Marshal(metric map[string]interface{}) ([]byte, error)
 }
 
+type SerializeFunc func(serializer2 Serializer, request *prompb.WriteRequest) (map[string][][]byte, error)
+
+// SerializeToEasyOps 序列化数据为EasyOps平台可识别的内容
+func SerializeToEasyOps(s Serializer, req *prompb.WriteRequest) (map[string][][]byte, error) {
+	promBatches.Add(float64(1))
+	result := make(map[string][][]byte)
+
+	for _, ts := range req.Timeseries {
+		labels := make(map[string]string, len(ts.Labels))
+
+		for _, l := range ts.Labels {
+			labels[string(model.LabelName(l.Name))] = string(model.LabelValue(l.Value))
+		}
+
+		name := string(labels["__name__"])
+		selected, rule := eoc.Select(name)
+
+		// label rewrite
+		if selected {
+			rule.RewriteLabel(labels)
+			if rule.DeleteLabels == nil || len(rule.DeleteLabels) == 0 {
+				goto SkipDeleteLabel
+			}
+			keys := make([]string, 1)
+			for key := range labels {
+				if _, ok := rule.DeleteLabels[key]; ok {
+					keys = append(keys, key)
+				}
+			}
+			for _, key := range keys {
+				delete(labels, key)
+			}
+		}
+
+	SkipDeleteLabel:
+
+		for _, sample := range ts.Samples {
+
+			if !selected {
+				objectsFiltered.Add(float64(1))
+				continue
+			}
+
+			org := rule.Org
+			if org == 0 {
+				org = eoc.DefaultORG
+			}
+
+			m := map[string]interface{}{
+				"source": map[string]interface{}{
+					"key": rule.Token,
+					"org": org,
+				},
+				"dims": labels,
+				"vals": map[string]float64{
+					name: sample.Value,
+				},
+				"time": sample.Timestamp,
+			}
+			data, err := s.Marshal(m)
+			if err != nil {
+				serializeFailed.Add(float64(1))
+				logrus.WithError(err).Errorln("couldn't marshal timeseries")
+			}
+
+			serializeTotal.Add(float64(1))
+			result[rule.Topic] = append(result[rule.Topic], data)
+		}
+	}
+
+	return result, nil
+}
+
 // Serialize generates the JSON representation for a given Prometheus metric.
 func Serialize(s Serializer, req *prompb.WriteRequest) (map[string][][]byte, error) {
 	promBatches.Add(float64(1))

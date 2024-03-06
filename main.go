@@ -62,7 +62,7 @@ func main() {
 		kafkaConfig["sasl.password"] = kafkaSaslPassword
 
 		if kafkaSslCACertFile != "" {
-		    kafkaConfig["ssl.ca.location"] = kafkaSslCACertFile
+			kafkaConfig["ssl.ca.location"] = kafkaSslCACertFile
 		}
 	}
 
@@ -83,8 +83,10 @@ func main() {
 			basicauthUsername: basicauthPassword,
 		}))
 		authorized.POST("/receive", receiveHandler(producer, serializer))
+		authorized.POST("/v2/receive", receiveV2Handler(producer, serializer))
 	} else {
 		r.POST("/receive", receiveHandler(producer, serializer))
+		r.POST("/v2/receive", receiveV2Handler(producer, serializer))
 	}
 
 	logrus.Fatal(r.Run())

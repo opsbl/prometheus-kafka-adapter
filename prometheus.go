@@ -23,3 +23,8 @@ func processWriteRequest(req *prompb.WriteRequest) (map[string][][]byte, error) 
 	logrus.WithField("var", req).Debugln()
 	return Serialize(serializer, req)
 }
+
+func processWriteRequestWithSerialize(req *prompb.WriteRequest, serialize SerializeFunc) (map[string][][]byte, error) {
+	logrus.WithField("var", req).Debugln()
+	return serialize(serializer, req)
+}

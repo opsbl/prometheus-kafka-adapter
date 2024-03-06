@@ -1,0 +1,36 @@
+defaultOrg: 1888
+rules:
+  # Kafka Topic Name
+  - topic: custom_HOST
+    org: 1033
+    token: mytoken
+    # 指标选择器
+    selectors:
+      # eq  指标名称等于==XXX的
+      # start_with 以XXX开头的指标
+      # regex: 正则表达式匹配的
+      # eq > start_with > regex 一旦匹配将不在往下寻找
+      - method: start_with
+        value: node_
+    # 删除标签
+    deleteLabels:
+      __name__: true
+    # 标签改写器
+    labelRewriter:
+      # 标签名称
+      - name: instance
+        # 是否覆盖原有标签
+        overwrite: true
+        # 匹配值, 可以使用分组
+        regex: "(.*?):(.*)"
+        labels:
+          # __name__  表示使用原有标签
+          # __value__ 表示使用原有值
+          # $N  表示正则分组号
+          # $NAME 表示正则分组名称
+          #
+          - name: hostname
+            value: $1
+            # 上面是一个无效规则
+          - name: port
+            value: $2

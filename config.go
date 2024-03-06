@@ -16,9 +16,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-playground/validator/v10"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"gopkg.in/yaml.v2"
+	"io"
 	"os"
 	"strings"
 	"text/template"
@@ -27,7 +29,8 @@ import (
 )
 
 var (
-	kafkaBrokerList        = "kafka:9092"
+	configFile             = "./config.yaml"
+	kafkaBrokerList        = "127.0.0.1:9092"
 	kafkaTopic             = "metrics"
 	topicTemplate          *template.Template
 	match                  = make(map[string]*dto.MetricFamily, 0)
@@ -45,6 +48,7 @@ var (
 	kafkaSaslUsername      = ""
 	kafkaSaslPassword      = ""
 	serializer             Serializer
+	eoc                    = &EasyOpsConfig{} // easy ops config
 )
 
 func init() {
@@ -53,6 +57,10 @@ func init() {
 
 	if value := os.Getenv("LOG_LEVEL"); value != "" {
 		logrus.SetLevel(parseLogLevel(value))
+	}
+
+	if value := os.Getenv("CONFIG"); value != "" {
+		configFile = value
 	}
 
 	if value := os.Getenv("KAFKA_BROKER_LIST"); value != "" {
@@ -130,6 +138,37 @@ func init() {
 	if err != nil {
 		logrus.WithError(err).Fatalln("couldn't parse the topic template")
 	}
+
+	if err = loadConfig(configFile); err != nil {
+		logrus.WithError(err).Fatalln("load config failed.")
+	}
+
+	if err = eoc.Init(); err != nil {
+		logrus.WithError(err).Fatalln("rule init failed.")
+	}
+}
+
+func loadConfig(file string) error {
+	fp, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	content, err := io.ReadAll(fp)
+	if err != nil {
+		return err
+	}
+	if err = yaml.Unmarshal(content, &eoc); err != nil {
+		return err
+	}
+	logrus.WithField("eoc", eoc).Debugln()
+	// validate
+	validate := validator.New()
+	if err = validate.Struct(eoc); err != nil {
+		return err
+	}
+	logrus.WithField("eoc", eoc).Debugln()
+
+	return nil
 }
 
 func parseMatchList(text string) (map[string]*dto.MetricFamily, error) {
