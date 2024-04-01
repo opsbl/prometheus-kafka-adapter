@@ -1,6 +1,6 @@
 # prometheus-kafka-adapter
 
-[![CI](https://github.com/opsbl/prometheus-kafka-adapter/workflows/Go/badge.svg?event=push)](https://github.com/opsbl/prometheus-kafka-adapter/actions)
+[![CI](https://github.com/opsbl/prometheus-kafka-adapter/workflows/Go/badge.svg)](https://github.com/opsbl/prometheus-kafka-adapter/actions)
 
 Prometheus-kafka-adapter is a service which receives [Prometheus](https://github.com/prometheus) metrics through [`remote_write`](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write), marshal into JSON and sends them into [Kafka](https://github.com/apache/kafka).
 
