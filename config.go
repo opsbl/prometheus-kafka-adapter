@@ -29,26 +29,28 @@ import (
 )
 
 var (
-	configFile             = "./config.yaml"
-	kafkaBrokerList        = "127.0.0.1:9092"
-	kafkaTopic             = "metrics"
-	topicTemplate          *template.Template
-	match                  = make(map[string]*dto.MetricFamily, 0)
-	basicauth              = false
-	basicauthUsername      = ""
-	basicauthPassword      = ""
-	kafkaCompression       = "none"
-	kafkaBatchNumMessages  = "10000"
-	kafkaSslClientCertFile = ""
-	kafkaSslClientKeyFile  = ""
-	kafkaSslClientKeyPass  = ""
-	kafkaSslCACertFile     = ""
-	kafkaSecurityProtocol  = ""
-	kafkaSaslMechanism     = ""
-	kafkaSaslUsername      = ""
-	kafkaSaslPassword      = ""
-	serializer             Serializer
-	eoc                    = &EasyOpsConfig{} // easy ops config
+	configFile                     = "./config.yaml"
+	kafkaBrokerList                = "localhost:9092"
+	kafkaTopic                     = "metrics"
+	topicTemplate                  *template.Template
+	match                          = make(map[string]*dto.MetricFamily, 0)
+	basicauth                      = false
+	basicauthUsername              = ""
+	basicauthPassword              = ""
+	kafkaCompression               = "none"
+	kafkaBatchNumMessages          = "10000"
+	kafkaQueueBufferingMaxMessages = "1000000"
+	kafkaSslClientCertFile         = ""
+	kafkaSslClientKeyFile          = ""
+	kafkaSslClientKeyPass          = ""
+	kafkaSslCACertFile             = ""
+	kafkaSecurityProtocol          = ""
+	kafkaSaslMechanism             = ""
+	kafkaSaslUsername              = ""
+	kafkaSaslPassword              = ""
+	serializer                     Serializer
+	eoc                            = &EasyOpsConfig{} // easy ops config
+	endpoint                       = "/api/v1/write"
 )
 
 func init() {
@@ -88,6 +90,10 @@ func init() {
 		kafkaBatchNumMessages = value
 	}
 
+	if value := os.Getenv("KAFKA_QUEUE_BUFFERING_MAX_MESSAGES"); value != "" {
+		kafkaQueueBufferingMaxMessages = value
+	}
+
 	if value := os.Getenv("KAFKA_SSL_CLIENT_CERT_FILE"); value != "" {
 		kafkaSslClientCertFile = value
 	}
@@ -118,6 +124,14 @@ func init() {
 
 	if value := os.Getenv("KAFKA_SASL_PASSWORD"); value != "" {
 		kafkaSaslPassword = value
+	}
+
+	if value := os.Getenv("KAFKA_SASL_PASSWORD"); value != "" {
+		kafkaSaslPassword = value
+	}
+
+	if value := os.Getenv("ENDPOINT"); value != "" {
+		endpoint = value
 	}
 
 	if value := os.Getenv("MATCH"); value != "" {

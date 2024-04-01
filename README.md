@@ -1,6 +1,6 @@
 # prometheus-kafka-adapter
 
-[![CI](https://github.com/Telefonica/prometheus-kafka-adapter/workflows/Go/badge.svg?event=push)](https://github.com/Telefonica/prometheus-kafka-adapter/actions)
+[![CI](https://github.com/opsbl/prometheus-kafka-adapter/workflows/Go/badge.svg?event=push)](https://github.com/opsbl/prometheus-kafka-adapter/actions)
 
 Prometheus-kafka-adapter is a service which receives [Prometheus](https://github.com/prometheus) metrics through [`remote_write`](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write), marshal into JSON and sends them into [Kafka](https://github.com/apache/kafka).
 
@@ -42,8 +42,10 @@ Prometheus-kafka-adapter listens for metrics coming from Prometheus and sends th
 - `KAFKA_TOPIC`: defines kafka topic to be used, defaults to `metrics`. Could use go template, labels are passed (as a map) to the template: e.g: `metrics.{{ index . "__name__" }}` to use per-metric topic. Two template functions are available: replace (`{{ index . "__name__" | replace "message" "msg" }}`) and substring (`{{ index . "__name__" | substring 0 5 }}`)
 - `KAFKA_COMPRESSION`: defines the compression type to be used, defaults to `none`.
 - `KAFKA_BATCH_NUM_MESSAGES`: defines the number of messages to batch write, defaults to `10000`.
+- `KAFKA_QUEUE_BUFFERING_MAX_MESSAGES`: defines the maximum number of messages in the local queue, defaults to `1000000`.
 - `SERIALIZATION_FORMAT`: defines the serialization format, can be `json`, `avro-json`, defaults to `json`.
 - `PORT`: defines http port to listen, defaults to `8080`, used directly by [gin](https://github.com/gin-gonic/gin).
+- `ENDPOINT`: defines API endpoints, defaults to `/api/v1/write`.
 - `BASIC_AUTH_USERNAME`: basic auth username to be used for receive endpoint, defaults is no basic auth.
 - `BASIC_AUTH_PASSWORD`: basic auth password to be used for receive endpoint, defaults is no basic auth.
 - `LOG_LEVEL`: defines log level for [`logrus`](https://github.com/sirupsen/logrus), can be `debug`, `info`, `warn`, `error`, `fatal` or `panic`, defaults to `info`.
@@ -101,6 +103,49 @@ With pull requests:
   - You should add/modify tests to cover your proposed code changes.
   - If your pull request contains a new feature, please document it in this README.
 
+## config
+
+```yaml
+
+defaultOrg: 1888
+rules:
+    # Kafka Topic Name
+  - topic: custom_HOST
+    # org
+    org: 0812712
+    # monitor report token
+    token: mytoken
+    # indicator selector
+    selectors:
+      # eq  metrics name == XXX 
+      # start_with metrics name starting with XX
+      # regex: the metrics name satisfies the regular expression
+      # eq > start_with > regex, once matched, no further search will be performed
+      - method: start_with
+        value: node_
+    # delete exists labels
+    deleteLabels:
+      __name__: true
+    # labels rewriter
+    labelRewriter:
+      # label name
+      - name: instance
+        # overwrite
+        overwrite: true
+        # match values, you can use grouping
+        regex: "(.*?):(.*)"
+        labels:
+          # __name__  indicates using the original label
+          # __value__ indicates using the original value
+          # $N  indicates regular group number
+          # $NAME indicates regular group name
+          #
+          - name: hostname
+            value: $1
+          - name: port
+            value: $2
+
+```
 
 ## license
 

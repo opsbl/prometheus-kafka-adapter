@@ -28,11 +28,12 @@ func main() {
 	logrus.Info("creating kafka producer")
 
 	kafkaConfig := kafka.ConfigMap{
-		"bootstrap.servers":   kafkaBrokerList,
-		"compression.codec":   kafkaCompression,
-		"batch.num.messages":  kafkaBatchNumMessages,
-		"go.batch.producer":   true,  // Enable batch producer (for increased performance).
-		"go.delivery.reports": false, // per-message delivery reports to the Events() channel
+		"bootstrap.servers":            kafkaBrokerList,
+		"compression.codec":            kafkaCompression,
+		"batch.num.messages":           kafkaBatchNumMessages,
+		"queue.buffering.max.messages": kafkaQueueBufferingMaxMessages,
+		"go.batch.producer":            true,  // Enable batch producer (for increased performance).
+		"go.delivery.reports":          false, // per-message delivery reports to the Events() channel
 	}
 
 	if kafkaSslClientCertFile != "" && kafkaSslClientKeyFile != "" && kafkaSslCACertFile != "" {
@@ -65,7 +66,7 @@ func main() {
 			kafkaConfig["ssl.ca.location"] = kafkaSslCACertFile
 		}
 	}
-
+	logrus.WithField("kafkaConfig", kafkaConfig).Debugln("kafka config.")
 	producer, err := kafka.NewProducer(&kafkaConfig)
 
 	if err != nil {
@@ -83,10 +84,10 @@ func main() {
 			basicauthUsername: basicauthPassword,
 		}))
 		authorized.POST("/receive", receiveHandler(producer, serializer))
-		authorized.POST("/v2/receive", receiveV2Handler(producer, serializer))
+		authorized.POST(endpoint, receiveV2Handler(producer, serializer))
 	} else {
 		r.POST("/receive", receiveHandler(producer, serializer))
-		r.POST("/v2/receive", receiveV2Handler(producer, serializer))
+		r.POST(endpoint, receiveV2Handler(producer, serializer))
 	}
 
 	logrus.Fatal(r.Run())
